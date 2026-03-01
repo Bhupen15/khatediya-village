@@ -1,4 +1,5 @@
 'use client'
+
 import { useState, useEffect } from "react";
 
 /* ─────────────────────────────────────────
@@ -41,26 +42,41 @@ export default function KhatediyaVillage() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
-  // Read page from URL hash — e.g. #about, #gallery, #map
+  // Safe window access — only on client side
   const getPageFromHash = () => {
+    if (typeof window === "undefined") return "home";
     const hash = window.location.hash.replace("#", "");
     const valid = ["home", "about", "gallery", "map"];
     return valid.includes(hash) ? hash : "home";
   };
 
-  const [page, setPage] = useState(getPageFromHash);
+  const [page, setPage] = useState("home");
 
   // Navigate: update state + push to browser history
   const navigate = (newPage) => {
     if (newPage === page) return;
-    window.history.pushState({ page: newPage }, "", newPage === "home" ? "#home" : `#${newPage}`);
+    if (typeof window !== "undefined") {
+      window.history.pushState({ page: newPage }, "", newPage === "home" ? "#home" : `#${newPage}`);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
     setPage(newPage);
     setMenuOpen(false);
-    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  // Handle browser back/forward buttons
+  // Set initial page from hash + handle back/forward — only on client
   useEffect(() => {
+    // Set page from URL hash on first load
+    setPage(getPageFromHash());
+
+    // Set initial history entry
+    const initialPage = getPageFromHash();
+    window.history.replaceState(
+      { page: initialPage },
+      "",
+      initialPage === "home" ? "#home" : `#${initialPage}`
+    );
+
+    // Handle browser back/forward buttons
     const handlePop = () => {
       setPage(getPageFromHash());
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -69,17 +85,15 @@ export default function KhatediyaVillage() {
     return () => window.removeEventListener("popstate", handlePop);
   }, []);
 
-  // Set initial history entry on first load
-  useEffect(() => {
-    const initialPage = getPageFromHash();
-    window.history.replaceState({ page: initialPage }, "", initialPage === "home" ? "#home" : `#${initialPage}`);
-    setTimeout(() => setLoaded(true), 80);
-  }, []);
-
   useEffect(() => {
     setLoaded(false);
-    setTimeout(() => setLoaded(true), 80);
+    const t = setTimeout(() => setLoaded(true), 80);
+    return () => clearTimeout(t);
   }, [page]);
+
+  useEffect(() => {
+    setTimeout(() => setLoaded(true), 80);
+  }, []);
 
   return (
     <div style={s.root}>
