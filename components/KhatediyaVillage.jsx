@@ -39,12 +39,48 @@ const NAV = [
    MAIN COMPONENT
 ───────────────────────────────────────── */
 export default function KhatediyaVillage() {
-  const [page, setPage] = useState("home");
   const [menuOpen, setMenuOpen] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
-  useEffect(() => { setTimeout(() => setLoaded(true), 80); }, []);
-  useEffect(() => { setLoaded(false); setTimeout(() => setLoaded(true), 80); }, [page]);
+  // Read page from URL hash — e.g. #about, #gallery, #map
+  const getPageFromHash = () => {
+    const hash = window.location.hash.replace("#", "");
+    const valid = ["home", "about", "gallery", "map"];
+    return valid.includes(hash) ? hash : "home";
+  };
+
+  const [page, setPage] = useState(getPageFromHash);
+
+  // Navigate: update state + push to browser history
+  const navigate = (newPage) => {
+    if (newPage === page) return;
+    window.history.pushState({ page: newPage }, "", newPage === "home" ? "#home" : `#${newPage}`);
+    setPage(newPage);
+    setMenuOpen(false);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  // Handle browser back/forward buttons
+  useEffect(() => {
+    const handlePop = () => {
+      setPage(getPageFromHash());
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    };
+    window.addEventListener("popstate", handlePop);
+    return () => window.removeEventListener("popstate", handlePop);
+  }, []);
+
+  // Set initial history entry on first load
+  useEffect(() => {
+    const initialPage = getPageFromHash();
+    window.history.replaceState({ page: initialPage }, "", initialPage === "home" ? "#home" : `#${initialPage}`);
+    setTimeout(() => setLoaded(true), 80);
+  }, []);
+
+  useEffect(() => {
+    setLoaded(false);
+    setTimeout(() => setLoaded(true), 80);
+  }, [page]);
 
   return (
     <div style={s.root}>
@@ -85,7 +121,6 @@ export default function KhatediyaVillage() {
           .nearby-grid { grid-template-columns: repeat(2, 1fr) !important; }
           .info-table-row { flex-direction: column !important; gap: 2px !important; }
           .info-val { text-align: left !important; }
-          .map-info { flex-direction: column !important; }
           .about-intro { padding: 24px 18px !important; }
           .page-header { padding: 28px 0 20px !important; }
           .page-title { font-size: 1.6rem !important; }
@@ -96,6 +131,30 @@ export default function KhatediyaVillage() {
           .lightbox-box { margin: 16px; }
           .filter-row { gap: 8px !important; }
           .footer-inner { padding: 28px 16px !important; }
+
+          /* Map info — compact grid on mobile */
+          .map-info { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 8px !important; margin-bottom: 16px !important; }
+          .map-info-item { padding: 8px 10px !important; font-size: 0.78rem !important; flex: unset !important; min-height: unset !important; }
+          .map-info-item span { font-size: 1rem !important; }
+
+          /* Stat cards smaller */
+          .stats-grid { gap: 8px !important; }
+          .stat-card { padding: 14px 8px !important; }
+          .stat-icon { font-size: 1.4rem !important; margin-bottom: 4px !important; }
+          .stat-val { font-size: 0.82rem !important; }
+          .stat-sub { font-size: 0.68rem !important; }
+
+          /* Nearby smaller */
+          .nearby-item { padding: 12px 10px !important; }
+          .nearby-name { font-size: 0.95rem !important; }
+
+          /* Gallery cards */
+          .gallery-card-label { padding: 8px 10px !important; }
+
+          /* Section padding */
+          .map-card { padding: 16px !important; }
+          .nearby-card { padding: 16px !important; }
+          .table-card { padding: 16px !important; }
         }
 
         @media (max-width: 480px) {
@@ -103,6 +162,7 @@ export default function KhatediyaVillage() {
           .stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
           .gallery-grid { grid-template-columns: repeat(1, 1fr) !important; }
           .nearby-grid { grid-template-columns: repeat(1, 1fr) !important; }
+          .map-info { grid-template-columns: 1fr !important; }
         }
       `}</style>
 
@@ -119,7 +179,7 @@ export default function KhatediyaVillage() {
           {/* Desktop Nav */}
           <nav style={s.desktopNav} className="desktop-nav">
             {NAV.map(n => (
-              <button key={n.key} className="nav-btn" onClick={() => setPage(n.key)} style={{
+              <button key={n.key} className="nav-btn" onClick={() => navigate(n.key)} style={{
                 ...s.navBtn,
                 ...(page === n.key ? s.navBtnActive : {})
               }}>{n.icon} {n.label}</button>
@@ -131,7 +191,7 @@ export default function KhatediyaVillage() {
         {menuOpen && (
           <div style={s.mobileMenu}>
             {NAV.map(n => (
-              <button key={n.key} onClick={() => { setPage(n.key); setMenuOpen(false); }} style={{
+              <button key={n.key} onClick={() => navigate(n.key)} style={{
                 ...s.mobileNavBtn,
                 ...(page === n.key ? { color: "#FFD700", fontWeight: "700" } : {})
               }}>{n.icon} {n.label}</button>
@@ -144,7 +204,7 @@ export default function KhatediyaVillage() {
       <main style={s.main}>
         {loaded && (
           <>
-            {page === "home" && <HomePage setPage={setPage} />}
+            {page === "home" && <HomePage navigate={navigate} />}
             {page === "about" && <AboutPage />}
             {page === "gallery" && <GalleryPage />}
             {page === "map" && <MapPage />}
@@ -186,7 +246,7 @@ export default function KhatediyaVillage() {
 /* ─────────────────────────────────────────
    HOME PAGE
 ───────────────────────────────────────── */
-function HomePage({ setPage }) {
+function HomePage({ navigate }) {
   return (
     <div>
       {/* Hero */}
@@ -199,8 +259,8 @@ function HomePage({ setPage }) {
           <div style={s.heroEn} className="anim anim3">{VILLAGE.nameEn}</div>
           <p style={s.heroTagline} className="anim anim4 hero-tagline">{VILLAGE.tagline}</p>
           <div style={s.heroActions} className="anim anim5 hero-actions">
-            <button onClick={() => setPage("about")} style={s.btnGold}>गाँव जानें →</button>
-            <button onClick={() => setPage("gallery")} style={s.btnOutline}>📸 गैलरी देखें</button>
+            <button onClick={() => navigate("about")} style={s.btnGold}>गाँव जानें →</button>
+            <button onClick={() => navigate("gallery")} style={s.btnOutline}>📸 गैलरी देखें</button>
           </div>
         </div>
 
@@ -216,10 +276,10 @@ function HomePage({ setPage }) {
           { icon: "🗳️", val: "हाटपिपल्या", sub: "विधानसभा क्षेत्र" },
           { icon: "🌊", val: "लोंद्री • पार्वती", sub: "निकट नदियाँ" },
         ].map((st, i) => (
-          <div key={i} className={`card-hover anim anim${Math.min(i + 1, 5)}`} style={s.statCard}>
-            <div style={s.statIcon}>{st.icon}</div>
-            <div style={s.statVal}>{st.val}</div>
-            <div style={s.statSub}>{st.sub}</div>
+          <div key={i} className={`card-hover anim anim${Math.min(i + 1, 5)} stat-card`} style={s.statCard}>
+            <div style={s.statIcon} className="stat-icon">{st.icon}</div>
+            <div style={s.statVal} className="stat-val">{st.val}</div>
+            <div style={s.statSub} className="stat-sub">{st.sub}</div>
           </div>
         ))}
       </div>
@@ -261,12 +321,12 @@ function AboutPage() {
         <div style={s.introDecor}>🌾</div>
         <h3 style={s.introTitle}>खतेड़िया — हमारा गाँव</h3>
         <p style={s.introText}>
-          खतेड़िया मध्यप्रदेश के देवास जिले की देवास तहसील में स्थित एक सुंदर गाँव है। यह गाँव उज्जैन संभाग का हिस्सा है और NH-52 राष्ट्रीय राजमार्ग से जुड़ा हुआ है। समुद्र तल से 514 मीटर की ऊंचाई पर स्थित यह गाँव लोंद्री नदी और पार्वती नदी के निकट है। यहाँ के लोग मालवी एवं हिन्दी भाषा बोलते हैं। कर्नावद डाकघर के अंतर्गत आने वाले इस गाँव का पिन कोड 455221 है।
+          खतेड़िया मध्यप्रदेश के देवास जिले की देवास तहसील में स्थित एक सुंदर गाँव है। यह गाँव उज्जैन संभाग का हिस्सा है और NH-52 राष्ट्रीय राजमार्ग से जुड़ा हुआ है। समुद्र तल से 514 मीटर की ऊंचाई पर स्थित यह गाँव लोंद्री नदी और पार्वती नदी के निकट है। यहाँ के लोग भील एवं हिन्दी भाषा बोलते हैं। कर्नावद डाकघर के अंतर्गत आने वाले इस गाँव का पिन कोड 455221 है।
         </p>
       </div>
 
       {/* Info table */}
-      <div className="anim anim2" style={s.tableCard}>
+      <div className="anim anim2 table-card" style={s.tableCard}>
         <h3 style={s.tableTitle}>📋 मूलभूत जानकारी</h3>
         <div style={s.infoTable}>
           {rows.map(([k, v], i) => (
@@ -344,7 +404,7 @@ function GalleryPage() {
                 <div style={s.galleryPlaceholderText}>फ़ोटो जल्द आएगी</div>
               </div>
             )}
-            <div style={s.galleryLabel}>
+            <div style={s.galleryLabel} className="gallery-card-label">
               <span style={s.galleryCat}>{item.cat}</span>
               <span style={s.galleryTitle}>{item.title}</span>
             </div>
@@ -380,14 +440,14 @@ function MapPage() {
         <p style={s.pageSub}>खतेड़िया की भौगोलिक स्थिति</p>
       </div>
 
-      <div className="anim anim1" style={s.mapCard}>
+      <div className="anim anim1 map-card" style={s.mapCard}>
         {/* Info chips */}
         <div style={s.mapInfo} className="map-info">
-          <div style={s.mapInfoItem}><span style={s.mapInfoIcon}>📍</span><div><strong>स्थान:</strong> खतेड़िया, देवास, मध्यप्रदेश</div></div>
-          <div style={s.mapInfoItem}><span style={s.mapInfoIcon}>🏔️</span><div><strong>ऊंचाई:</strong> 514 मीटर (समुद्र तल से)</div></div>
-          <div style={s.mapInfoItem}><span style={s.mapInfoIcon}>🛣️</span><div><strong>राजमार्ग:</strong> NH-52 से जुड़ा</div></div>
-          <div style={s.mapInfoItem}><span style={s.mapInfoIcon}>🌊</span><div><strong>निकट नदियाँ:</strong> लोंद्री नदी, पार्वती नदी</div></div>
-          <div style={s.mapInfoItem}><span style={s.mapInfoIcon}>📮</span><div><strong>पिन कोड:</strong> 455221</div></div>
+          <div style={s.mapInfoItem} className="map-info-item"><span style={s.mapInfoIcon}>📍</span><div><strong>स्थान:</strong> खतेड़िया, देवास, मध्यप्रदेश</div></div>
+          <div style={s.mapInfoItem} className="map-info-item"><span style={s.mapInfoIcon}>🏔️</span><div><strong>ऊंचाई:</strong> 514 मीटर (समुद्र तल से)</div></div>
+          <div style={s.mapInfoItem} className="map-info-item"><span style={s.mapInfoIcon}>🛣️</span><div><strong>राजमार्ग:</strong> NH-52 से जुड़ा</div></div>
+          <div style={s.mapInfoItem} className="map-info-item"><span style={s.mapInfoIcon}>🌊</span><div><strong>निकट नदियाँ:</strong> लोंद्री नदी, पार्वती नदी</div></div>
+          <div style={s.mapInfoItem} className="map-info-item"><span style={s.mapInfoIcon}>📮</span><div><strong>पिन कोड:</strong> 455221</div></div>
         </div>
 
         {/* Google Maps Embed */}
@@ -411,17 +471,17 @@ function MapPage() {
       </div>
 
       {/* Nearby towns */}
-      <div className="anim anim2" style={s.nearbyCard}>
+      <div className="anim anim2 nearby-card" style={s.nearbyCard}>
         <h3 style={s.tableTitle}>🏘️ निकटवर्ती क्षेत्र</h3>
         <div style={s.nearbyGrid} className="nearby-grid">
           {[
-            { name: "देवास", type: "जिला मुख्यालय", dist: "~24 किमी" },
-            { name: "उज्जैन", type: "संभागीय मुख्यालय", dist: "~60 किमी" },
-            { name: "इंदौर", type: "वाणिज्यिक केंद्र", dist: "~35 किमी" },
-            { name: "हाटपिपल्या", type: "विधानसभा केंद्र", dist: "~30 किमी" },
+            { name: "देवास", type: "जिला मुख्यालय", dist: "~15 किमी" },
+            { name: "उज्जैन", type: "संभागीय मुख्यालय", dist: "~55 किमी" },
+            { name: "इंदौर", type: "वाणिज्यिक केंद्र", dist: "~60 किमी" },
+            { name: "हाटपिपल्या", type: "विधानसभा केंद्र", dist: "~20 किमी" },
           ].map((t, i) => (
-            <div key={i} className="card-hover" style={s.nearbyItem}>
-              <div style={s.nearbyName}>{t.name}</div>
+            <div key={i} className="card-hover nearby-item" style={s.nearbyItem}>
+              <div style={s.nearbyName} className="nearby-name">{t.name}</div>
               <div style={s.nearbyType}>{t.type}</div>
               <div style={s.nearbyDist}>{t.dist}</div>
             </div>
