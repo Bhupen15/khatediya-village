@@ -20,7 +20,7 @@ const VILLAGE = {
   postOffice: "Karnawad",
   stdCode: "07272",
   elevation: "514 मीटर (समुद्र तल से ऊपर)",
-  language: "भील, हिन्दी (देवनागरी)",
+  language: "मालवी, हिन्दी (देवनागरी)",
   assembly: "हाटपिपल्या विधानसभा क्षेत्र",
   parliament: "देवास लोकसभा क्षेत्र",
   highway: "NH-52",
@@ -488,10 +488,10 @@ function MapPage() {
         <h3 style={s.tableTitle}>🏘️ निकटवर्ती क्षेत्र</h3>
         <div style={s.nearbyGrid} className="nearby-grid">
           {[
-            { name: "देवास", type: "जिला मुख्यालय", dist: "~15 किमी" },
-            { name: "उज्जैन", type: "संभागीय मुख्यालय", dist: "~55 किमी" },
-            { name: "इंदौर", type: "वाणिज्यिक केंद्र", dist: "~60 किमी" },
-            { name: "हाटपिपल्या", type: "विधानसभा केंद्र", dist: "~20 किमी" },
+            { name: "देवास", type: "जिला मुख्यालय", dist: "~24 किमी" },
+            { name: "उज्जैन", type: "संभागीय मुख्यालय", dist: "~60 किमी" },
+            { name: "इंदौर", type: "वाणिज्यिक केंद्र", dist: "~35 किमी" },
+            { name: "हाटपिपल्या", type: "विधानसभा केंद्र", dist: "~30 किमी" },
           ].map((t, i) => (
             <div key={i} className="card-hover nearby-item" style={s.nearbyItem}>
               <div style={s.nearbyName} className="nearby-name">{t.name}</div>
